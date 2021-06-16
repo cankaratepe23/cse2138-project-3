@@ -51,11 +51,8 @@ public class Main {
 
     public static void main(String[] args) {
         parseArguments(args);
-        long start = System.nanoTime();
         initRam("RAM.dat");
-        long end = System.nanoTime() - start;
         readTrace(traceFilename);
-        System.out.println("Annen");
     }
 
     // Start trace-parsing functions
