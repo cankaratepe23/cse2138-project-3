@@ -51,22 +51,28 @@ public class Main {
         }
         while (traceReader.hasNextLine()) {
             String line = traceReader.nextLine();
-            System.out.println(line);
             parseTraceLine(line);
         }
     }
 
     private static void parseTraceLine(String line) {
         char operation = line.charAt(0);
-        String sAddress = line.substring(2, 9);
+        String sAddress = line.substring(2, 10);
+        long address = Long.parseLong(sAddress, 16);
         if (operation == 'I' || operation == 'L') { // format is: op address, size
             String sSize = line.substring(line.indexOf(',') + 2);
-            executeOperation(operation, sAddress, sSize);
+            int size = Integer.parseInt(sSize);
+            executeOperation(operation, address, size);
         }
         else if (operation == 'M' || operation == 'S') { // format is: op address, size, data
             String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
             String sData = line.substring(line.lastIndexOf(',') + 2);
-            executeOperation(operation, sAddress, sSize, sData);
+            int size = Integer.parseInt(sSize);
+            int[] data = new int[sData.length() / 2]; // should probably initialize with maximum 8 bytes of capacity...
+            for (int i = 0; i < data.length; i++) {
+                data[i] = Integer.parseInt(sData.substring(i*2, (i*2)+2), 16);
+            }
+            executeOperation(operation, address, size, data);
         }
         else {
             System.err.printf("Invalid data found in trace:\n%s", line);
@@ -77,34 +83,35 @@ public class Main {
 
 
     // Start operation logic
-    private static void executeOperation(char operation, String sAddress, String sSize) {
+    private static void executeOperation(char operation, long address, int size) {
         if (operation == 'I') {
-            loadInstruction(sAddress, sSize);
+            loadInstruction(address, size);
         }
         else if (operation == 'L') {
-            loadData(sAddress, sSize);
+            loadData(address, size);
         }
     }
 
-    private static void executeOperation(char operation, String sAddress, String sSize, String sData) {
+    private static void executeOperation(char operation, long address, int size, int[] data) {
         if (operation == 'S') {
-            storeData(sAddress, sSize, sData);
+            storeData(address, size, data);
         }
         else if (operation == 'M') {
-            modifyData(sAddress, sSize, sData);
+            modifyData(address, size, data);
         }
     }
 
-    private static void loadInstruction(String sAddress, String sSize) {
+    private static void loadInstruction(long address, int size) {
+
     }
 
-    private static void loadData(String sAddress, String sSize) {
+    private static void loadData(long address, int size) {
     }
 
-    private static void storeData(String sAddress, String sSize, String sData) {
+    private static void storeData(long address, int size, int[] data) {
     }
 
-    private static void modifyData(String sAddress, String sSize, String sData) {
+    private static void modifyData(long address, int size, int[] data) {
     }
     // End
 
