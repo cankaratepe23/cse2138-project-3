@@ -118,7 +118,7 @@ public class Main {
     }
 
     private static void loadInstruction(long address, int size) {
-
+        // TODO Reconsider method signatures. e.g. maybe find set before calling and pass the set instance instead of the address.
     }
 
     private static void loadData(long address, int size) {
@@ -130,6 +130,16 @@ public class Main {
     private static void modifyData(long address, int size, int[] data) {
     }
     // End
+
+
+    // Start cache related functions
+    private static Set findSet(long address) {
+        String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
+        // TODO find the proper set from set index and return
+        return null;
+    }
+    // End
+
 
     // Start RAM related functions
     private static void initRam(String filename) {
