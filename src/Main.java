@@ -2,35 +2,58 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
     ///L1s
     private static int l1SetIndexBitCount;
+
     ///L1 - Number of sets
-    private static int getL1SetCount() { return (int) Math.pow(2, l1SetIndexBitCount); }
+    private static int getL1SetCount() {
+        return (int) Math.pow(2, l1SetIndexBitCount);
+    }
+
     ///L1E
     private static int l1LinesPerSet;
     ///L1b
     private static int l1BlockBits;
+
     ///L1 - Size of block (Number of bytes in block)
-    private static int getL1BlockSize() { return (int) Math.pow(2, l1BlockBits); }
+    private static int getL1BlockSize() {
+        return (int) Math.pow(2, l1BlockBits);
+    }
+
     ///L2s
     private static int l2SetIndexBitCount;
+
     ///L2 - Number of sets
-    private static int getL2SetCount() { return (int) Math.pow(2, l2SetIndexBitCount); }
+    private static int getL2SetCount() {
+        return (int) Math.pow(2, l2SetIndexBitCount);
+    }
+
     ///L2E
     private static int l2LinesPerSet;
     ///L2b
     private static int l2BlockBits;
+
     ///L2 - Size of block (Number of bytes in block)
-    private static int getL2BlockSize() { return (int) Math.pow(2, l2BlockBits); }
+    private static int getL2BlockSize() {
+        return (int) Math.pow(2, l2BlockBits);
+    }
+
     private static String traceFilename;
     private static byte[] ram;
+    private static List<Set> l1InstructionCache;
+    private static List<Set> l1DataCache;
+    private static List<Set> l2Cache;
 
     public static void main(String[] args) {
         parseArguments(args);
+        long start = System.nanoTime();
         initRam("RAM.dat");
+        long end = System.nanoTime() - start;
         readTrace(traceFilename);
         System.out.println("Annen");
     }
@@ -63,18 +86,16 @@ public class Main {
             String sSize = line.substring(line.indexOf(',') + 2);
             int size = Integer.parseInt(sSize);
             executeOperation(operation, address, size);
-        }
-        else if (operation == 'M' || operation == 'S') { // format is: op address, size, data
+        } else if (operation == 'M' || operation == 'S') { // format is: op address, size, data
             String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
             String sData = line.substring(line.lastIndexOf(',') + 2);
             int size = Integer.parseInt(sSize);
             int[] data = new int[sData.length() / 2]; // should probably initialize with maximum 8 bytes of capacity...
             for (int i = 0; i < data.length; i++) {
-                data[i] = Integer.parseInt(sData.substring(i*2, (i*2)+2), 16);
+                data[i] = Integer.parseInt(sData.substring(i * 2, (i * 2) + 2), 16);
             }
             executeOperation(operation, address, size, data);
-        }
-        else {
+        } else {
             System.err.printf("Invalid data found in trace:\n%s", line);
             System.exit(-1);
         }
@@ -86,8 +107,7 @@ public class Main {
     private static void executeOperation(char operation, long address, int size) {
         if (operation == 'I') {
             loadInstruction(address, size);
-        }
-        else if (operation == 'L') {
+        } else if (operation == 'L') {
             loadData(address, size);
         }
     }
@@ -95,8 +115,7 @@ public class Main {
     private static void executeOperation(char operation, long address, int size, int[] data) {
         if (operation == 'S') {
             storeData(address, size, data);
-        }
-        else if (operation == 'M') {
+        } else if (operation == 'M') {
             modifyData(address, size, data);
         }
     }
@@ -123,8 +142,7 @@ public class Main {
         }
         try {
             ram = Files.readAllBytes(filepath);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             System.err.println("IO error while reading RAM.");
             ex.printStackTrace();
             System.exit(ex.hashCode());
@@ -134,8 +152,35 @@ public class Main {
 
     // Start argument init functions
     private static void parseArguments(String[] args) {
-        for (int i = 0; i < args.length; i+=2) {
+        for (int i = 0; i < args.length; i += 2) {
             setArg(args[i], args[i + 1]);
+        }
+
+        l1DataCache = new ArrayList<>(getL1SetCount());
+        for (int i = 0; i < getL1SetCount(); i++) { // init L1 instruction cache
+            Set set = new Set(l1LinesPerSet);
+            for (int j = 0; j < l1LinesPerSet; j++) {
+                set.lines.add(j, new Line(getL1BlockSize()));
+            }
+            l1DataCache.add(i, set);
+        }
+
+        l1InstructionCache = new ArrayList<>(getL1SetCount());
+        for (int i = 0; i < getL1SetCount(); i++) { // init L1 data cache
+            Set set = new Set(l1LinesPerSet);
+            for (int j = 0; j < l1LinesPerSet; j++) {
+                set.lines.add(j, new Line(getL1BlockSize()));
+            }
+            l1InstructionCache.add(i, set);
+        }
+
+        l2Cache = new ArrayList<>(getL2SetCount());
+        for (int i = 0; i < getL2SetCount(); i++) { // init L2 cache
+            Set set = new Set(l2LinesPerSet);
+            for (int j = 0; j < l2LinesPerSet; j++) {
+                set.lines.add(j, new Line(getL2BlockSize()));
+            }
+            l2Cache.add(i, set);
         }
     }
 
@@ -143,8 +188,7 @@ public class Main {
         int value = -1;
         try {
             value = Integer.parseInt(sValue);
-        }
-        catch (NumberFormatException ignored) {
+        } catch (NumberFormatException ignored) {
             if (!arg.equals("-t")) { // A non-numeric value was entered for a numeric-only argument
                 System.err.printf("The value of %s can only be an integer.\n", arg);
                 System.exit(-1);
