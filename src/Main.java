@@ -1,5 +1,3 @@
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -33,7 +31,7 @@ public class Main {
     public static void main(String[] args) {
         parseArguments(args);
         initRam("RAM.dat");
-        readTrace("traces/test.trace");
+        readTrace(traceFilename);
         System.out.println("Annen");
     }
 
@@ -97,7 +95,17 @@ public class Main {
         }
     }
 
+    private static void loadInstruction(String sAddress, String sSize) {
+    }
 
+    private static void loadData(String sAddress, String sSize) {
+    }
+
+    private static void storeData(String sAddress, String sSize, String sData) {
+    }
+
+    private static void modifyData(String sAddress, String sSize, String sData) {
+    }
     // End
 
     // Start RAM related functions
