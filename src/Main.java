@@ -96,7 +96,7 @@ public class Main {
     private static void parseTraceLine(String line) {
         char operation = line.charAt(0);
         String sAddress = line.substring(2, 10);
-        long address = Long.parseLong(sAddress, 16);
+        long address = Long.parseLong(sAddress, 16) % ram.length;
         if (operation == 'I' || operation == 'L') { // format is: op address, size
             String sSize = line.substring(line.indexOf(',') + 2);
             int size = Integer.parseInt(sSize);
@@ -179,7 +179,6 @@ public class Main {
 
     private static void storeData(long address, int size, int[] data, TraceDTO L1D, TraceDTO L2) {
 
-
     }
 
 
@@ -220,7 +219,7 @@ public class Main {
             case L1I:
 
                 offset = l1BlockBits + l1SetIndexBitCount;
-                tag = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - offset), 2);
+                tag = Integer.parseInt(binaryAddress.substring(0, binaryAddress.length() - offset), 2);
                 blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l1BlockBits), 2);
                 if (l1SetIndexBitCount == 0)
                     return new TraceDTO(l1InstructionCache.get(0), tag, blockOffset);
@@ -232,7 +231,7 @@ public class Main {
             case L1D:
 
                 offset = l1BlockBits + l1SetIndexBitCount;
-                tag = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - offset), 2);
+                tag = Integer.parseInt(binaryAddress.substring(0, binaryAddress.length() - offset), 2);
                 blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l1BlockBits), 2);
                 if (l1SetIndexBitCount == 0)
                     return new TraceDTO(l1DataCache.get(0), tag, blockOffset);
@@ -244,7 +243,7 @@ public class Main {
             case L2:
 
                 offset = l2BlockBits + l2SetIndexBitCount;
-                tag = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - offset), 2);
+                tag = Integer.parseInt(binaryAddress.substring(0, binaryAddress.length() - offset), 2);
                 blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l2BlockBits), 2);
                 if (l2SetIndexBitCount == 0)
                     return new TraceDTO(l2Cache.get(0), tag, blockOffset);
