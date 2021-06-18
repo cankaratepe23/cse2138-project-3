@@ -55,11 +55,9 @@ public class Main {
     private static List<Set> l1DataCache;
     private static List<Set> l2Cache;
 
-    private static final HitMissEvictionCounter l1ICounter = new HitMissEvictionCounter();
-    private static final HitMissEvictionCounter l1DCounter = new HitMissEvictionCounter();
-    private static final HitMissEvictionCounter l2Counter = new HitMissEvictionCounter();
 
     public static void main(String[] args) {
+        traceFilename = "traces/test.trace";
         parseArguments(args);
         initRam("RAM.dat");
         readTrace(traceFilename);
@@ -127,9 +125,9 @@ public class Main {
         TraceDTO L2TraceDTO = findSet(address, CacheType.L2);
 
         if (operation == 'I') {
-            loadInstruction(address, size, L1ITraceDTO, L2TraceDTO);
+            loadInstruction(address, L1ITraceDTO, L2TraceDTO);
         } else if (operation == 'L') {
-            loadData(address, size, L1DTraceDTO, L2TraceDTO);
+            loadData(address, L1DTraceDTO, L2TraceDTO);
         }
     }
 
@@ -143,25 +141,45 @@ public class Main {
         }
     }
 
-    private static void loadInstruction(long address, int size, TraceDTO L1I, TraceDTO L2) {
+    private static void loadInstruction(long address, TraceDTO L1I, TraceDTO L2) {
         if (isInCache(L1I)) {
-            l1ICounter.increaseHit();
+            HitMissEvictionCounter.getInstance(CacheType.L1I).increaseHit();
         } else {
-            l1ICounter.increaseMiss();
-            L1I.getSet().write(ram, address, getL1BlockSize());
+            HitMissEvictionCounter.getInstance(CacheType.L1I).increaseMiss();
+            byte[] data = getData(address, CacheType.L1I);
+            L1I.getSet().write(data, L1I.getTag(), CacheType.L1I);
         }
 
         if (isInCache(L2)) {
-            l2Counter.increaseHit();
+            HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
         } else {
-            l2Counter.increaseMiss();
+            HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
+            byte[] data = getData(address, CacheType.L2);
+            L2.getSet().write(data, L2.getTag(), CacheType.L2);
         }
     }
 
-    private static void loadData(long address, int size, TraceDTO L1D, TraceDTO L2) {
+    private static void loadData(long address, TraceDTO L1D, TraceDTO L2) {
+        if (isInCache(L1D)) {
+            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
+        } else {
+            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
+            byte[] data = getData(address, CacheType.L1D);
+            L1D.getSet().write(data, L1D.getTag(), CacheType.L1D);
+        }
+
+        if (isInCache(L2)) {
+            HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
+        } else {
+            HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
+            byte[] data = getData(address, CacheType.L2);
+            L2.getSet().write(data, L2.getTag(), CacheType.L2);
+        }
     }
 
     private static void storeData(long address, int size, int[] data, TraceDTO L1D, TraceDTO L2) {
+
+
     }
 
 
@@ -169,8 +187,18 @@ public class Main {
     }
     // End
 
-    private static byte[] getData(long address) {
+    private static byte[] getData(long address, CacheType type) {
 
+        int length = type == CacheType.L2 ? getL2BlockSize() : getL1BlockSize();
+        byte[] result = new byte[length];
+
+        for (int i = 0; i < length; i++) {
+
+            result[i] = ram[(int) (address + i)];
+
+        }
+
+        return result;
     }
 
     private static boolean isInCache(TraceDTO traceDTO) {
@@ -294,17 +322,31 @@ public class Main {
         }
 
         switch (arg) {
-            case "-L1s" -> l1SetIndexBitCount = value;
-            case "-L1E" -> l1LinesPerSet = value;
-            case "-L1b" -> l1BlockBits = value;
-            case "-L2s" -> l2SetIndexBitCount = value;
-            case "-L2E" -> l2LinesPerSet = value;
-            case "-L2b" -> l2BlockBits = value;
-            case "-t" -> traceFilename = sValue;
-            default -> {
+            case "-L1s":
+                l1SetIndexBitCount = value;
+                break;
+            case "-L1E":
+                l1LinesPerSet = value;
+                break;
+            case "-L1b":
+                l1BlockBits = value;
+                break;
+            case "-L2s":
+                l2SetIndexBitCount = value;
+                break;
+            case "-L2E":
+                l2LinesPerSet = value;
+                break;
+            case "-L2b":
+                l2BlockBits = value;
+                break;
+            case "-t":
+                traceFilename = sValue;
+                break;
+            default:
                 System.err.printf("Cannot set %s more than once.\n", arg);
                 System.exit(-1);
-            }
+
         }
     }
     // End

@@ -1,9 +1,9 @@
 public class Line {
     public boolean valid;
     public int tag;
-    public int[] data;
+    public byte[] data;
     // tag???
     public Line(int blocksize) {
-        data = new int[blocksize];
+        data = new byte[blocksize];
     }
 }
