@@ -6,6 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+enum CacheType {
+    L1D,
+    L1I,
+    L2
+}
+
 public class Main {
     ///L1s
     private static int l1SetIndexBitCount;
@@ -49,10 +55,24 @@ public class Main {
     private static List<Set> l1DataCache;
     private static List<Set> l2Cache;
 
+    private static final HitMissEvictionCounter l1ICounter = new HitMissEvictionCounter();
+    private static final HitMissEvictionCounter l1DCounter = new HitMissEvictionCounter();
+    private static final HitMissEvictionCounter l2Counter = new HitMissEvictionCounter();
+
     public static void main(String[] args) {
         parseArguments(args);
         initRam("RAM.dat");
         readTrace(traceFilename);
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i + 1), 16));
+        }
+        return data;
     }
 
     // Start trace-parsing functions
@@ -102,41 +122,112 @@ public class Main {
 
     // Start operation logic
     private static void executeOperation(char operation, long address, int size) {
+        TraceDTO L1DTraceDTO = findSet(address, CacheType.L1D);
+        TraceDTO L1ITraceDTO = findSet(address, CacheType.L1I);
+        TraceDTO L2TraceDTO = findSet(address, CacheType.L2);
+
         if (operation == 'I') {
-            loadInstruction(address, size);
+            loadInstruction(address, size, L1ITraceDTO, L2TraceDTO);
         } else if (operation == 'L') {
-            loadData(address, size);
+            loadData(address, size, L1DTraceDTO, L2TraceDTO);
         }
     }
 
     private static void executeOperation(char operation, long address, int size, int[] data) {
+        TraceDTO L1DTraceDTO = findSet(address, CacheType.L1D);
+        TraceDTO L2TraceDTO = findSet(address, CacheType.L2);
         if (operation == 'S') {
-            storeData(address, size, data);
+            storeData(address, size, data, L1DTraceDTO, L2TraceDTO);
         } else if (operation == 'M') {
-            modifyData(address, size, data);
+            modifyData(address, size, data, L1DTraceDTO, L2TraceDTO);
         }
     }
 
-    private static void loadInstruction(long address, int size) {
-        // TODO Reconsider method signatures. e.g. maybe find set before calling and pass the set instance instead of the address.
+    private static void loadInstruction(long address, int size, TraceDTO L1I, TraceDTO L2) {
+        if (isInCache(L1I)) {
+            l1ICounter.increaseHit();
+        } else {
+            l1ICounter.increaseMiss();
+            L1I.getSet().write(ram, address, getL1BlockSize());
+        }
+
+        if (isInCache(L2)) {
+            l2Counter.increaseHit();
+        } else {
+            l2Counter.increaseMiss();
+        }
     }
 
-    private static void loadData(long address, int size) {
+    private static void loadData(long address, int size, TraceDTO L1D, TraceDTO L2) {
     }
 
-    private static void storeData(long address, int size, int[] data) {
+    private static void storeData(long address, int size, int[] data, TraceDTO L1D, TraceDTO L2) {
     }
 
-    private static void modifyData(long address, int size, int[] data) {
+
+    private static void modifyData(long address, int size, int[] data, TraceDTO L1D, TraceDTO L2) {
     }
     // End
 
+    private static byte[] getData(long address) {
+
+    }
+
+    private static boolean isInCache(TraceDTO traceDTO) {
+        for (Line line : traceDTO.getSet().lines) {
+            if (line.valid && line.tag == traceDTO.getTag())
+                return true;
+        }
+        return false;
+    }
 
     // Start cache related functions
-    private static Set findSet(long address) {
+    private static TraceDTO findSet(long address, CacheType cacheType) {
         String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
-        // TODO find the proper set from set index and return
-        return null;
+        int offset;
+        int tag;
+        int blockOffset;
+        String set = "";
+        switch (cacheType) {
+            case L1I:
+
+                offset = l1BlockBits + l1SetIndexBitCount;
+                tag = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - offset), 2);
+                blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l1BlockBits), 2);
+                if (l1SetIndexBitCount == 0)
+                    return new TraceDTO(l1InstructionCache.get(0), tag, blockOffset);
+
+                set = binaryAddress.substring(binaryAddress.length() - offset,
+                        binaryAddress.length() - l1BlockBits + 1);
+                return new TraceDTO(l1InstructionCache.get(Integer.parseInt(set, 2)), tag, blockOffset);
+
+            case L1D:
+
+                offset = l1BlockBits + l1SetIndexBitCount;
+                tag = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - offset), 2);
+                blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l1BlockBits), 2);
+                if (l1SetIndexBitCount == 0)
+                    return new TraceDTO(l1DataCache.get(0), tag, blockOffset);
+                offset = l1BlockBits + l1SetIndexBitCount;
+                set = binaryAddress.substring(binaryAddress.length() - offset,
+                        binaryAddress.length() - l1BlockBits + 1);
+                return new TraceDTO(l1DataCache.get(Integer.parseInt(set, 2)), tag, blockOffset);
+
+            case L2:
+
+                offset = l2BlockBits + l2SetIndexBitCount;
+                tag = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - offset), 2);
+                blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l2BlockBits), 2);
+                if (l2SetIndexBitCount == 0)
+                    return new TraceDTO(l2Cache.get(0), tag, blockOffset);
+                set = binaryAddress.substring(binaryAddress.length() - offset,
+                        binaryAddress.length() - l2BlockBits + 1);
+                return new TraceDTO(l2Cache.get(Integer.parseInt(set, 2)), tag, blockOffset);
+            default:
+                System.err.println("Invalid cache type");
+                System.exit(-1);
+                return null;
+        }
     }
     // End
 
