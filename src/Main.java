@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -119,19 +120,37 @@ public class Main {
 
     private static void printCacheContents() {
 
-        System.out.println("Print cache contents: ");
-        System.out.println("L1I Cache: ");
-        for (Set set : l1InstructionCache) {
-            System.out.println(set.toString());
-        }
-        System.out.println("L1D Cache: ");
-        for (Set set : l1DataCache) {
-            System.out.println(set.toString());
-        }
-        System.out.println("L2 Cache: ");
 
-        for (Set set : l2Cache) {
-            System.out.println(set.toString());
+        try {
+            Path l1I = FileSystems.getDefault().getPath("l1I.txt");
+            Path l1D = FileSystems.getDefault().getPath("l1D.txt");
+            Path l2 = FileSystems.getDefault().getPath("l2.txt");
+
+            Files.writeString(l1I,"");
+            Files.writeString(l1D,"");
+            Files.writeString(l2,"");
+
+            System.out.println("Print cache contents: ");
+            System.out.println("L1I Cache: ");
+            for (Set set : l1InstructionCache) {
+                System.out.println(set.toString());
+                Files.writeString(l1I, set+"\n",StandardOpenOption.APPEND);
+            }
+            System.out.println("L1D Cache: ");
+            for (Set set : l1DataCache) {
+                System.out.println(set.toString());
+                Files.writeString(l1D, set+"\n", StandardOpenOption.APPEND);
+
+            }
+            System.out.println("L2 Cache: ");
+
+            for (Set set : l2Cache) {
+                System.out.println(set.toString());
+                Files.writeString(l2, set+"\n",StandardOpenOption.APPEND);
+
+            }
+        } catch (Exception e) {
+            System.out.println("Main.printCacheContents e: " + e);
         }
 
     }
