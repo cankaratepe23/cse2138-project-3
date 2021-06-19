@@ -59,7 +59,7 @@ public class Main {
         parseArguments(args);
         initRam("RAM.dat");
         readTrace(traceFilename);
-        String stringOfADown = String.format("GNU/linux> ./your_simulator -L1s %d -L1E %d -L1b %d -L2s %d -L2E %d -L2b %d -t %s\n", l1SetIndexBitCount, l1LinesPerSet, l1BlockBits, l2SetIndexBitCount, l2LinesPerSet, l2BlockBits, traceFilename) + "\tL1I-hits:" + HitOrMissEvictionCounter.getInstance(CacheType.L1I).getHit() +
+        String stringOfADown = "\tL1I-hits:" + HitOrMissEvictionCounter.getInstance(CacheType.L1I).getHit() +
                 " L1I-misses:" + HitOrMissEvictionCounter.getInstance(CacheType.L1I).getMiss() +
                 " L1I-evictions:" + HitOrMissEvictionCounter.getInstance(CacheType.L1I).getEviction() + "\n" +
                 "\tL1D-hits:" + HitOrMissEvictionCounter.getInstance(CacheType.L1D).getHit() +
@@ -121,9 +121,9 @@ public class Main {
 
 
         try {
-            Path l1I = FileSystems.getDefault().getPath("l1I.txt");
-            Path l1D = FileSystems.getDefault().getPath("l1D.txt");
-            Path l2 = FileSystems.getDefault().getPath("l2.txt");
+            Path l1I = FileSystems.getDefault().getPath("L1I.txt");
+            Path l1D = FileSystems.getDefault().getPath("L1D.txt");
+            Path l2 = FileSystems.getDefault().getPath("L2.txt");
 
             Files.writeString(l1I,"");
             Files.writeString(l1D,"");
