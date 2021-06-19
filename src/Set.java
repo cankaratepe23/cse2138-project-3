@@ -46,4 +46,9 @@ public class Set {
 
 
     }
+
+    @Override
+    public String toString() {
+        return "Set" + lines;
+    }
 }

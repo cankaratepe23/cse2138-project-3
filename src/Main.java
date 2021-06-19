@@ -70,6 +70,8 @@ public class Main {
                 " L2-evictions:" + HitOrMissEvictionCounter.getInstance(CacheType.L2).getEviction() + "\n";
         System.out.println(stringOfADown);
         System.out.print(statTrek);
+        writeRamToFile(ram);
+        printCacheContents();
     }
 
     // Start trace-parsing functions
@@ -114,6 +116,37 @@ public class Main {
         }
     }
     // End
+
+    private static void printCacheContents() {
+
+        System.out.println("Print cache contents: ");
+        System.out.println("L1I Cache: ");
+        for (Set set : l1InstructionCache) {
+            System.out.println(set.toString());
+        }
+        System.out.println("L1D Cache: ");
+        for (Set set : l1DataCache) {
+            System.out.println(set.toString());
+        }
+        System.out.println("L2 Cache: ");
+
+        for (Set set : l2Cache) {
+            System.out.println(set.toString());
+        }
+
+    }
+
+    private static void writeRamToFile(byte[] ramData) {
+        Path filepath = FileSystems.getDefault().getPath("RAM_out.dat");
+
+        try {
+            Files.write(filepath, ramData);
+        } catch (IOException ex) {
+            System.err.println("IO error while reading RAM.");
+            ex.printStackTrace();
+            System.exit(ex.hashCode());
+        }
+    }
 
 
     // Start operation logic

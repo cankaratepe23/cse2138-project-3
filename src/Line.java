@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class Line {
     public boolean valid;
     public int tag;
@@ -10,5 +12,14 @@ public class Line {
 
     public void incrementAge() {
         age++;
+    }
+
+    @Override
+    public String toString() {
+        return "Line{" +
+                "valid=" + valid +
+                ", tag=" + tag +
+                ", data=" + Arrays.toString(data) +
+                '}';
     }
 }
