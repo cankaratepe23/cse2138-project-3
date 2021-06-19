@@ -58,15 +58,15 @@ public class Main {
         initRam("RAM.dat");
         readTrace(traceFilename);
         StringBuilder stringOfADown = new StringBuilder(String.format("GNU/linux> ./your_simulator -L1s %d -L1E %d -L1b %d -L2s %d -L2E %d -L2b %d -t %s\n", l1SetIndexBitCount, l1LinesPerSet, l1BlockBits, l2SetIndexBitCount, l2LinesPerSet, l2BlockBits, traceFilename));
-        stringOfADown.append("\tL1I-hits:").append(HitMissEvictionCounter.getInstance(CacheType.L1I).getHit())
-                .append(" L1I-misses:").append(HitMissEvictionCounter.getInstance(CacheType.L1I).getMiss())
-                .append(" L1I-evictions:").append(HitMissEvictionCounter.getInstance(CacheType.L1I).getEviction()).append("\n");
-        stringOfADown.append("\tL1D-hits:").append(HitMissEvictionCounter.getInstance(CacheType.L1D).getHit())
-                .append(" L1D-misses:").append(HitMissEvictionCounter.getInstance(CacheType.L1D).getMiss())
-                .append(" L1D-evictions:").append(HitMissEvictionCounter.getInstance(CacheType.L1D).getEviction()).append("\n");
-        stringOfADown.append("\tL2-hits:").append(HitMissEvictionCounter.getInstance(CacheType.L2).getHit())
-                .append(" L2-misses:").append(HitMissEvictionCounter.getInstance(CacheType.L2).getMiss())
-                .append(" L2-evictions:").append(HitMissEvictionCounter.getInstance(CacheType.L2).getEviction()).append("\n");
+        stringOfADown.append("\tL1I-hits:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1I).getHit())
+                .append(" L1I-misses:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1I).getMiss())
+                .append(" L1I-evictions:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1I).getEviction()).append("\n");
+        stringOfADown.append("\tL1D-hits:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1D).getHit())
+                .append(" L1D-misses:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1D).getMiss())
+                .append(" L1D-evictions:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1D).getEviction()).append("\n");
+        stringOfADown.append("\tL2-hits:").append(HitOrMissEvictionCounter.getInstance(CacheType.L2).getHit())
+                .append(" L2-misses:").append(HitOrMissEvictionCounter.getInstance(CacheType.L2).getMiss())
+                .append(" L2-evictions:").append(HitOrMissEvictionCounter.getInstance(CacheType.L2).getEviction()).append("\n");
         System.out.println(stringOfADown);
         System.out.print(statTrek);
     }
@@ -145,10 +145,10 @@ public class Main {
         StringBuilder messageInABottle = new StringBuilder("\t");
         if (isInCache(L1I)) {
             statTrek.append("L1I hit, ");
-            HitMissEvictionCounter.getInstance(CacheType.L1I).increaseHit();
+            HitOrMissEvictionCounter.getInstance(CacheType.L1I).increaseHit();
         } else {
             statTrek.append("L1I miss, ");
-            HitMissEvictionCounter.getInstance(CacheType.L1I).increaseMiss();
+            HitOrMissEvictionCounter.getInstance(CacheType.L1I).increaseMiss();
             byte[] data = getData(address, CacheType.L1I, L1I.getBlockOffset());
             L1I.getSet().write(data, L1I.getTag(), CacheType.L1I);
             messageInABottle.append("place in L1I set ").append(l1InstructionCache.indexOf(L1I.getSet())).append(", ");
@@ -156,10 +156,10 @@ public class Main {
 
         if (isInCache(L2)) {
             statTrek.append("L2 hit");
-            HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
+            HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
         } else {
             statTrek.append("L2 miss");
-            HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
+            HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
             byte[] data = getData(address, CacheType.L2, L2.getBlockOffset());
             L2.getSet().write(data, L2.getTag(), CacheType.L2);
             messageInABottle.append("place in L2 set ").append(l2Cache.indexOf(L2.getSet())).append("\n");
@@ -171,10 +171,10 @@ public class Main {
         StringBuilder myNameJeff = new StringBuilder("\t");
         if (isInCache(L1D)) {
             statTrek.append("L1D hit, ");
-            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
+            HitOrMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
         } else {
             statTrek.append("L1D miss, ");
-            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
+            HitOrMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
             byte[] data = getData(address, CacheType.L1D, L1D.getBlockOffset());
             L1D.getSet().write(data, L1D.getTag(), CacheType.L1D);
             myNameJeff.append("place in L1D set ").append(l1DataCache.indexOf(L1D.getSet())).append(", ");
@@ -182,10 +182,10 @@ public class Main {
 
         if (isInCache(L2)) {
             statTrek.append("L2 hit, ");
-            HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
+            HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
         } else {
             statTrek.append("L2 miss, ");
-            HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
+            HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
             byte[] data = getData(address, CacheType.L2, L2.getBlockOffset());
             L2.getSet().write(data, L2.getTag(), CacheType.L2);
             myNameJeff.append("place in L2 set ").append(l2Cache.indexOf(L2.getSet())).append(", ");
@@ -199,19 +199,19 @@ public class Main {
         Line line2 = findLine(L2);
         if (line1D != null) {
             statTrek.append("L1D hit, ");
-            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
+            HitOrMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
             if (size >= 0) System.arraycopy(data, 0, line1D.data, L1D.getBlockOffset(), size);
             trippleginton.append("L1D, ");
         } else {
             statTrek.append("L1D miss, ");
-            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
+            HitOrMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
         }
         if (line2 != null) {
-            HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
+            HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
             if (size >= 0) System.arraycopy(data, 0, line2.data, L2.getBlockOffset(), size);
             trippleginton.append("L2, ");
         } else {
-            HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
+            HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
         }
         setData(address, size, data);
         trippleginton.append("RAM");

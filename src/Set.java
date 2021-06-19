@@ -44,7 +44,7 @@ public class Set {
         lineToBeUpdated.tag = tag;
         lineToBeUpdated.data = data;
         lineToBeUpdated.age = 0;
-        HitMissEvictionCounter.getInstance(type).increaseEviction();
+        HitOrMissEvictionCounter.getInstance(type).increaseEviction();
 
 
     }

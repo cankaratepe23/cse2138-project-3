@@ -1,31 +1,31 @@
-public class HitMissEvictionCounter {
+public class HitOrMissEvictionCounter {
     private int miss;
     private int hit;
     private int eviction;
 
-    private static HitMissEvictionCounter l1Iinstance;
-    private static HitMissEvictionCounter l1Dinstance;
-    private static HitMissEvictionCounter l2instance;
+    private static HitOrMissEvictionCounter l1Iinstance;
+    private static HitOrMissEvictionCounter l1Dinstance;
+    private static HitOrMissEvictionCounter l2instance;
 
 
-    public static HitMissEvictionCounter getInstance(CacheType type) {
+    public static HitOrMissEvictionCounter getInstance(CacheType type) {
 
         switch (type) {
             case L1D:
                 if (l1Dinstance == null) {
-                    l1Dinstance = new HitMissEvictionCounter();
+                    l1Dinstance = new HitOrMissEvictionCounter();
                 }
                 return l1Dinstance;
 
             case L1I:
                 if (l1Iinstance == null) {
-                    l1Iinstance = new HitMissEvictionCounter();
+                    l1Iinstance = new HitOrMissEvictionCounter();
                 }
                 return l1Iinstance;
 
             case L2:
                 if (l2instance == null) {
-                    l2instance = new HitMissEvictionCounter();
+                    l2instance = new HitOrMissEvictionCounter();
                 }
                 return l2instance;
         }
@@ -34,7 +34,7 @@ public class HitMissEvictionCounter {
         return l1Dinstance;
     }
 
-    private HitMissEvictionCounter() {
+    private HitOrMissEvictionCounter() {
     }
 
     public int getMiss() {
