@@ -13,8 +13,6 @@ enum CacheType {
     L2
 }
 
-// TODO Do not forget to output to RAM.dat file AND  contents of the caches at least once before exit.
-
 public class Main {
     public static final StringBuilder statTrek = new StringBuilder();
     ///L1s
@@ -98,6 +96,9 @@ public class Main {
         statTrek.append(line).append("\n");
         char operation = line.charAt(0);
         String sAddress = line.substring(2, 10);
+        /*
+        The modulo operator here is required to make sure the address is valid.
+         */
         long address = Long.parseLong(sAddress, 16) % ram.length;
         if (operation == 'I' || operation == 'L') { // format is: op address, size
             executeOperation(operation, address);
@@ -118,13 +119,14 @@ public class Main {
     // End
 
     private static void printCacheContents() {
-
-
         try {
             Path l1I = FileSystems.getDefault().getPath("L1I.txt");
             Path l1D = FileSystems.getDefault().getPath("L1D.txt");
             Path l2 = FileSystems.getDefault().getPath("L2.txt");
 
+            /*
+            Clears the contents of the files from previous executions.
+             */
             Files.writeString(l1I,"");
             Files.writeString(l1D,"");
             Files.writeString(l2,"");
@@ -309,6 +311,10 @@ public class Main {
 
     // Start cache related functions
     private static TraceDTO findSet(long address, CacheType cacheType) {
+        /*
+        Finds the set, tag and block offset the TraceDTO is a simple
+        data transfer object that holds these values together.
+         */
         String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
         int offset;
         int tag;
