@@ -56,7 +56,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        traceFilename = "traces/test.trace";
         parseArguments(args);
         initRam("RAM.dat");
         readTrace(traceFilename);
