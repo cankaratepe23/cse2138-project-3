@@ -12,6 +12,8 @@ enum CacheType {
     L2
 }
 
+// TODO Do not forget to output to RAM.dat file AND  contents of the caches at least once before exit.
+
 public class Main {
     public static final StringBuilder statTrek = new StringBuilder();
     ///L1s
@@ -185,7 +187,7 @@ public class Main {
             HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
             byte[] data = getData(address, CacheType.L2, L2.getBlockOffset());
             L2.getSet().write(data, L2.getTag(), CacheType.L2);
-            myNameJeff.append("place in L2 set ").append(l2Cache.indexOf(L2.getSet())).append(", ");
+            myNameJeff.append("place in L2 set ").append(l2Cache.indexOf(L2.getSet())).append("\n");
         }
         statTrek.append("\n").append(myNameJeff).append("\n");
     }
@@ -211,7 +213,7 @@ public class Main {
             HitOrMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
         }
         setData(address, size, data);
-        trippleginton.append("RAM");
+        trippleginton.append("RAM").append("\n");
         statTrek.append("\n").append(trippleginton).append("\n");
     }
 
@@ -220,7 +222,6 @@ public class Main {
         loadData(address, L1D, L2);
         statTrek.append("\t");
         storeData(address, size, data, L1D, L2);
-        statTrek.append("\n");
     }
     // End
 
@@ -238,8 +239,6 @@ public class Main {
             ram[(int) (address + i)] = data[i];
         }
     }
-
-    // TODO Do not forget to output to RAM.dat file at least once before exit.
 
     private static boolean isInCache(TraceDTO traceDTO) {
         for (Line line : traceDTO.getSet().lines) {
