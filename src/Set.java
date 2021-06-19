@@ -21,7 +21,7 @@ public class Set {
         return maxLine;
     }
 
-    public void write(byte[] data, int tag, CacheType type, int blockOffset) {
+    public void write(byte[] data, int tag, CacheType type) {
         for (Line line : lines) {
             if (line.valid)
                 line.incrementAge();

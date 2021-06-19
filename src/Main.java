@@ -13,54 +13,62 @@ enum CacheType {
 }
 
 public class Main {
+    public static final StringBuilder statTrek = new StringBuilder();
     ///L1s
     private static int l1SetIndexBitCount;
-
-    ///L1 - Number of sets
-    private static int getL1SetCount() {
-        return (int) Math.pow(2, l1SetIndexBitCount);
-    }
-
     ///L1E
     private static int l1LinesPerSet;
     ///L1b
     private static int l1BlockBits;
-
-    ///L1 - Size of block (Number of bytes in block)
-    private static int getL1BlockSize() {
-        return (int) Math.pow(2, l1BlockBits);
-    }
-
     ///L2s
     private static int l2SetIndexBitCount;
-
-    ///L2 - Number of sets
-    private static int getL2SetCount() {
-        return (int) Math.pow(2, l2SetIndexBitCount);
-    }
-
     ///L2E
     private static int l2LinesPerSet;
     ///L2b
     private static int l2BlockBits;
-
-    ///L2 - Size of block (Number of bytes in block)
-    private static int getL2BlockSize() {
-        return (int) Math.pow(2, l2BlockBits);
-    }
-
     private static String traceFilename;
     private static byte[] ram;
     private static List<Set> l1InstructionCache;
     private static List<Set> l1DataCache;
     private static List<Set> l2Cache;
 
+    ///L1 - Number of sets
+    private static int getL1SetCount() {
+        return (int) Math.pow(2, l1SetIndexBitCount);
+    }
+
+    ///L1 - Size of block (Number of bytes in block)
+    private static int getL1BlockSize() {
+        return (int) Math.pow(2, l1BlockBits);
+    }
+
+    ///L2 - Number of sets
+    private static int getL2SetCount() {
+        return (int) Math.pow(2, l2SetIndexBitCount);
+    }
+
+    ///L2 - Size of block (Number of bytes in block)
+    private static int getL2BlockSize() {
+        return (int) Math.pow(2, l2BlockBits);
+    }
 
     public static void main(String[] args) {
         traceFilename = "traces/test.trace";
         parseArguments(args);
         initRam("RAM.dat");
         readTrace(traceFilename);
+        StringBuilder stringOfADown = new StringBuilder(String.format("GNU/linux> ./your_simulator -L1s %d -L1E %d -L1b %d -L2s %d -L2E %d -L2b %d -t %s\n", l1SetIndexBitCount, l1LinesPerSet, l1BlockBits, l2SetIndexBitCount, l2LinesPerSet, l2BlockBits, traceFilename));
+        stringOfADown.append("\tL1I-hits:").append(HitMissEvictionCounter.getInstance(CacheType.L1I).getHit())
+                .append(" L1I-misses:").append(HitMissEvictionCounter.getInstance(CacheType.L1I).getMiss())
+                .append(" L1I-evictions:").append(HitMissEvictionCounter.getInstance(CacheType.L1I).getEviction()).append("\n");
+        stringOfADown.append("\tL1D-hits:").append(HitMissEvictionCounter.getInstance(CacheType.L1D).getHit())
+                .append(" L1D-misses:").append(HitMissEvictionCounter.getInstance(CacheType.L1D).getMiss())
+                .append(" L1D-evictions:").append(HitMissEvictionCounter.getInstance(CacheType.L1D).getEviction()).append("\n");
+        stringOfADown.append("\tL2-hits:").append(HitMissEvictionCounter.getInstance(CacheType.L2).getHit())
+                .append(" L2-misses:").append(HitMissEvictionCounter.getInstance(CacheType.L2).getMiss())
+                .append(" L2-evictions:").append(HitMissEvictionCounter.getInstance(CacheType.L2).getEviction()).append("\n");
+        System.out.println(stringOfADown);
+        System.out.print(statTrek);
     }
 
     public static byte[] hexStringToByteArray(String s) {
@@ -94,6 +102,7 @@ public class Main {
     }
 
     private static void parseTraceLine(String line) {
+        statTrek.append(line).append("\n");
         char operation = line.charAt(0);
         String sAddress = line.substring(2, 10);
         long address = Long.parseLong(sAddress, 16) % ram.length;
@@ -123,7 +132,7 @@ public class Main {
         TraceDTO L1DTraceDTO = findSet(address, CacheType.L1D);
         TraceDTO L1ITraceDTO = findSet(address, CacheType.L1I);
         TraceDTO L2TraceDTO = findSet(address, CacheType.L2);
-
+        statTrek.append("\t");
         if (operation == 'I') {
             loadInstruction(address, L1ITraceDTO, L2TraceDTO);
         } else if (operation == 'L') {
@@ -134,6 +143,7 @@ public class Main {
     private static void executeOperation(char operation, long address, int size, byte[] data) {
         TraceDTO L1DTraceDTO = findSet(address, CacheType.L1D);
         TraceDTO L2TraceDTO = findSet(address, CacheType.L2);
+        statTrek.append("\t");
         if (operation == 'S') {
             storeData(address, size, data, L1DTraceDTO, L2TraceDTO);
         } else if (operation == 'M') {
@@ -142,62 +152,88 @@ public class Main {
     }
 
     private static void loadInstruction(long address, TraceDTO L1I, TraceDTO L2) {
+        StringBuilder messageInABottle = new StringBuilder("\t");
         if (isInCache(L1I)) {
+            statTrek.append("L1I hit, ");
             HitMissEvictionCounter.getInstance(CacheType.L1I).increaseHit();
         } else {
+            statTrek.append("L1I miss, ");
             HitMissEvictionCounter.getInstance(CacheType.L1I).increaseMiss();
             byte[] data = getData(address, CacheType.L1I, L1I.getBlockOffset());
-            L1I.getSet().write(data, L1I.getTag(), CacheType.L1I, 0);
+            L1I.getSet().write(data, L1I.getTag(), CacheType.L1I);
+            messageInABottle.append("place in L1I set ").append(l1InstructionCache.indexOf(L1I.getSet())).append(", ");
         }
 
         if (isInCache(L2)) {
+            statTrek.append("L2 hit");
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
         } else {
+            statTrek.append("L2 miss");
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
             byte[] data = getData(address, CacheType.L2, L2.getBlockOffset());
-            L2.getSet().write(data, L2.getTag(), CacheType.L2, 0);
+            L2.getSet().write(data, L2.getTag(), CacheType.L2);
+            messageInABottle.append("place in L2 set ").append(l2Cache.indexOf(L2.getSet())).append("\n");
         }
+        statTrek.append("\n").append(messageInABottle).append("\n");
     }
 
     private static void loadData(long address, TraceDTO L1D, TraceDTO L2) {
+        StringBuilder myNameJeff = new StringBuilder("\t");
         if (isInCache(L1D)) {
+            statTrek.append("L1D hit, ");
             HitMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
         } else {
+            statTrek.append("L1D miss, ");
             HitMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
             byte[] data = getData(address, CacheType.L1D, L1D.getBlockOffset());
-            L1D.getSet().write(data, L1D.getTag(), CacheType.L1D, 0);
+            L1D.getSet().write(data, L1D.getTag(), CacheType.L1D);
+            myNameJeff.append("place in L1D set ").append(l1DataCache.indexOf(L1D.getSet())).append(", ");
         }
 
         if (isInCache(L2)) {
+            statTrek.append("L2 hit, ");
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
         } else {
+            statTrek.append("L2 miss, ");
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
             byte[] data = getData(address, CacheType.L2, L2.getBlockOffset());
-            L2.getSet().write(data, L2.getTag(), CacheType.L2, 0);
+            L2.getSet().write(data, L2.getTag(), CacheType.L2);
+            myNameJeff.append("place in L2 set ").append(l2Cache.indexOf(L2.getSet())).append(", ");
         }
+        statTrek.append("\n").append(myNameJeff).append("\n");
     }
 
     private static void storeData(long address, int size, byte[] data, TraceDTO L1D, TraceDTO L2) {
+        StringBuilder trippleginton = new StringBuilder("\tStore in ");
         Line line1D = findLine(L1D);
         Line line2 = findLine(L2);
         if (line1D != null) {
+            statTrek.append("L1D hit, ");
             HitMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
             if (size >= 0) System.arraycopy(data, 0, line1D.data, L1D.getBlockOffset(), size);
+            trippleginton.append("L1D, ");
         } else {
+            statTrek.append("L1D miss, ");
             HitMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
         }
         if (line2 != null) {
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
             if (size >= 0) System.arraycopy(data, 0, line2.data, L2.getBlockOffset(), size);
+            trippleginton.append("L2, ");
         } else {
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
         }
         setData(address, size, data);
+        trippleginton.append("RAM");
+        statTrek.append("\n").append(trippleginton).append("\n");
     }
 
 
     private static void modifyData(long address, int size, byte[] data, TraceDTO L1D, TraceDTO L2) {
-
+        loadData(address, L1D, L2);
+        statTrek.append("\t");
+        storeData(address, size, data, L1D, L2);
+        statTrek.append("\n");
     }
     // End
 
@@ -207,7 +243,7 @@ public class Main {
         byte[] result = new byte[length];
 
         for (int i = 0; i < length; i++) {
-            result[i] = ram[(int) (start + i)];
+            result[i] = ram[start + i];
         }
         return result;
     }
@@ -216,7 +252,6 @@ public class Main {
         for (int i = 0; i < size; i++) {
             ram[(int) (address + i)] = data[i];
         }
-        System.out.println("anan");
     }
 
     // TODO Do not forget to output to RAM.dat file at least once before exit.
