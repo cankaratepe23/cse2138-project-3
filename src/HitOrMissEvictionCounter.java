@@ -11,23 +11,24 @@ public class HitOrMissEvictionCounter {
     public static HitOrMissEvictionCounter getInstance(CacheType type) {
 
         switch (type) {
-            case L1D:
+            case L1D -> {
                 if (l1Dinstance == null) {
                     l1Dinstance = new HitOrMissEvictionCounter();
                 }
                 return l1Dinstance;
-
-            case L1I:
+            }
+            case L1I -> {
                 if (l1Iinstance == null) {
                     l1Iinstance = new HitOrMissEvictionCounter();
                 }
                 return l1Iinstance;
-
-            case L2:
+            }
+            case L2 -> {
                 if (l2instance == null) {
                     l2instance = new HitOrMissEvictionCounter();
                 }
                 return l2instance;
+            }
         }
 
 

@@ -1,8 +1,8 @@
 public class TraceDTO {
 
-    private Set set;
-    private int tag;
-    private int blockOffset;
+    private final Set set;
+    private final int tag;
+    private final int blockOffset;
 
     public TraceDTO(Set set, int tag, int blockOffset) {
         this.set = set;

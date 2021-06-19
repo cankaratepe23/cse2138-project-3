@@ -4,9 +4,8 @@ public class Line {
     public byte[] data;
     public int age;
 
-    // tag???
-    public Line(int blocksize) {
-        data = new byte[blocksize];
+    public Line(int blockSize) {
+        data = new byte[blockSize];
     }
 
     public void incrementAge() {

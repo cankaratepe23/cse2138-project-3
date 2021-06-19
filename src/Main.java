@@ -57,16 +57,15 @@ public class Main {
         parseArguments(args);
         initRam("RAM.dat");
         readTrace(traceFilename);
-        StringBuilder stringOfADown = new StringBuilder(String.format("GNU/linux> ./your_simulator -L1s %d -L1E %d -L1b %d -L2s %d -L2E %d -L2b %d -t %s\n", l1SetIndexBitCount, l1LinesPerSet, l1BlockBits, l2SetIndexBitCount, l2LinesPerSet, l2BlockBits, traceFilename));
-        stringOfADown.append("\tL1I-hits:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1I).getHit())
-                .append(" L1I-misses:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1I).getMiss())
-                .append(" L1I-evictions:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1I).getEviction()).append("\n");
-        stringOfADown.append("\tL1D-hits:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1D).getHit())
-                .append(" L1D-misses:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1D).getMiss())
-                .append(" L1D-evictions:").append(HitOrMissEvictionCounter.getInstance(CacheType.L1D).getEviction()).append("\n");
-        stringOfADown.append("\tL2-hits:").append(HitOrMissEvictionCounter.getInstance(CacheType.L2).getHit())
-                .append(" L2-misses:").append(HitOrMissEvictionCounter.getInstance(CacheType.L2).getMiss())
-                .append(" L2-evictions:").append(HitOrMissEvictionCounter.getInstance(CacheType.L2).getEviction()).append("\n");
+        String stringOfADown = String.format("GNU/linux> ./your_simulator -L1s %d -L1E %d -L1b %d -L2s %d -L2E %d -L2b %d -t %s\n", l1SetIndexBitCount, l1LinesPerSet, l1BlockBits, l2SetIndexBitCount, l2LinesPerSet, l2BlockBits, traceFilename) + "\tL1I-hits:" + HitOrMissEvictionCounter.getInstance(CacheType.L1I).getHit() +
+                " L1I-misses:" + HitOrMissEvictionCounter.getInstance(CacheType.L1I).getMiss() +
+                " L1I-evictions:" + HitOrMissEvictionCounter.getInstance(CacheType.L1I).getEviction() + "\n" +
+                "\tL1D-hits:" + HitOrMissEvictionCounter.getInstance(CacheType.L1D).getHit() +
+                " L1D-misses:" + HitOrMissEvictionCounter.getInstance(CacheType.L1D).getMiss() +
+                " L1D-evictions:" + HitOrMissEvictionCounter.getInstance(CacheType.L1D).getEviction() + "\n" +
+                "\tL2-hits:" + HitOrMissEvictionCounter.getInstance(CacheType.L2).getHit() +
+                " L2-misses:" + HitOrMissEvictionCounter.getInstance(CacheType.L2).getMiss() +
+                " L2-evictions:" + HitOrMissEvictionCounter.getInstance(CacheType.L2).getEviction() + "\n";
         System.out.println(stringOfADown);
         System.out.print(statTrek);
     }
@@ -97,9 +96,7 @@ public class Main {
         String sAddress = line.substring(2, 10);
         long address = Long.parseLong(sAddress, 16) % ram.length;
         if (operation == 'I' || operation == 'L') { // format is: op address, size
-            String sSize = line.substring(line.indexOf(',') + 2);
-            int size = Integer.parseInt(sSize);
-            executeOperation(operation, address, size);
+            executeOperation(operation, address);
         } else if (operation == 'M' || operation == 'S') { // format is: op address, size, data
             String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
             String sData = line.substring(line.lastIndexOf(',') + 2);
@@ -118,7 +115,7 @@ public class Main {
 
 
     // Start operation logic
-    private static void executeOperation(char operation, long address, int size) {
+    private static void executeOperation(char operation, long address) {
         TraceDTO L1DTraceDTO = findSet(address, CacheType.L1D);
         TraceDTO L1ITraceDTO = findSet(address, CacheType.L1I);
         TraceDTO L2TraceDTO = findSet(address, CacheType.L2);
@@ -232,9 +229,7 @@ public class Main {
         int start = (int) (address - blockOffset);
         byte[] result = new byte[length];
 
-        for (int i = 0; i < length; i++) {
-            result[i] = ram[start + i];
-        }
+        System.arraycopy(ram, start, result, 0, length);
         return result;
     }
 
@@ -270,20 +265,17 @@ public class Main {
         int blockOffset;
         String set;
         switch (cacheType) {
-            case L1I:
-
+            case L1I -> {
                 offset = l1BlockBits + l1SetIndexBitCount;
                 tag = Integer.parseInt(binaryAddress.substring(0, binaryAddress.length() - offset), 2);
                 blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l1BlockBits), 2);
                 if (l1SetIndexBitCount == 0)
                     return new TraceDTO(l1InstructionCache.get(0), tag, blockOffset);
-
                 set = binaryAddress.substring(binaryAddress.length() - offset,
                         binaryAddress.length() - l1BlockBits + 1);
                 return new TraceDTO(l1InstructionCache.get(Integer.parseInt(set, 2)), tag, blockOffset);
-
-            case L1D:
-
+            }
+            case L1D -> {
                 offset = l1BlockBits + l1SetIndexBitCount;
                 tag = Integer.parseInt(binaryAddress.substring(0, binaryAddress.length() - offset), 2);
                 blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l1BlockBits), 2);
@@ -293,9 +285,8 @@ public class Main {
                 set = binaryAddress.substring(binaryAddress.length() - offset,
                         binaryAddress.length() - l1BlockBits + 1);
                 return new TraceDTO(l1DataCache.get(Integer.parseInt(set, 2)), tag, blockOffset);
-
-            case L2:
-
+            }
+            case L2 -> {
                 offset = l2BlockBits + l2SetIndexBitCount;
                 tag = Integer.parseInt(binaryAddress.substring(0, binaryAddress.length() - offset), 2);
                 blockOffset = Integer.parseInt(binaryAddress.substring(binaryAddress.length() - l2BlockBits), 2);
@@ -304,10 +295,12 @@ public class Main {
                 set = binaryAddress.substring(binaryAddress.length() - offset,
                         binaryAddress.length() - l2BlockBits + 1);
                 return new TraceDTO(l2Cache.get(Integer.parseInt(set, 2)), tag, blockOffset);
-            default:
+            }
+            default -> {
                 System.err.println("Invalid cache type");
                 System.exit(-1);
                 return null;
+            }
         }
     }
     // End
@@ -375,31 +368,17 @@ public class Main {
         }
 
         switch (arg) {
-            case "-L1s":
-                l1SetIndexBitCount = value;
-                break;
-            case "-L1E":
-                l1LinesPerSet = value;
-                break;
-            case "-L1b":
-                l1BlockBits = value;
-                break;
-            case "-L2s":
-                l2SetIndexBitCount = value;
-                break;
-            case "-L2E":
-                l2LinesPerSet = value;
-                break;
-            case "-L2b":
-                l2BlockBits = value;
-                break;
-            case "-t":
-                traceFilename = sValue;
-                break;
-            default:
+            case "-L1s" -> l1SetIndexBitCount = value;
+            case "-L1E" -> l1LinesPerSet = value;
+            case "-L1b" -> l1BlockBits = value;
+            case "-L2s" -> l2SetIndexBitCount = value;
+            case "-L2E" -> l2LinesPerSet = value;
+            case "-L2b" -> l2BlockBits = value;
+            case "-t" -> traceFilename = sValue;
+            default -> {
                 System.err.printf("Cannot set %s more than once.\n", arg);
                 System.exit(-1);
-
+            }
         }
     }
     // End

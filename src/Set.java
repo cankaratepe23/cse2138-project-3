@@ -2,8 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Set {
-    public List<Line> lines;
-    public int oldestLineIndex;
+    public final List<Line> lines;
 
     public Set(int initialCapacity) {
         this.lines = new ArrayList<>(initialCapacity);
@@ -27,8 +26,7 @@ public class Set {
                 line.incrementAge();
         }
 
-        for (int i = 0; i < lines.size(); i++) {
-            Line line = lines.get(i);
+        for (Line line : lines) {
             if (!line.valid) {
                 line.age = 0;
                 line.data = data;
