@@ -21,23 +21,20 @@ public class Set {
         return maxLine;
     }
 
-    public void write(byte[] data, int tag, CacheType type) {
+    public void write(byte[] data, int tag, CacheType type, int blockOffset) {
         for (Line line : lines) {
             if (line.valid)
                 line.incrementAge();
         }
 
         for (int i = 0; i < lines.size(); i++) {
-
             Line line = lines.get(i);
-
             if (!line.valid) {
                 line.age = 0;
                 line.data = data;
                 line.valid = true;
                 line.tag = tag;
                 return;
-
             }
         }
 

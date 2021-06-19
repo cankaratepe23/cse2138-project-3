@@ -105,9 +105,9 @@ public class Main {
             String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
             String sData = line.substring(line.lastIndexOf(',') + 2);
             int size = Integer.parseInt(sSize);
-            int[] data = new int[sData.length() / 2]; // should probably initialize with maximum 8 bytes of capacity...
+            byte[] data = new byte[sData.length() / 2]; // should probably initialize with maximum 8 bytes of capacity...
             for (int i = 0; i < data.length; i++) {
-                data[i] = Integer.parseInt(sData.substring(i * 2, (i * 2) + 2), 16);
+                data[i] = (byte) Integer.parseInt(sData.substring(i * 2, (i * 2) + 2), 16);
             }
             executeOperation(operation, address, size, data);
         } else {
@@ -131,7 +131,7 @@ public class Main {
         }
     }
 
-    private static void executeOperation(char operation, long address, int size, int[] data) {
+    private static void executeOperation(char operation, long address, int size, byte[] data) {
         TraceDTO L1DTraceDTO = findSet(address, CacheType.L1D);
         TraceDTO L2TraceDTO = findSet(address, CacheType.L2);
         if (operation == 'S') {
@@ -146,16 +146,16 @@ public class Main {
             HitMissEvictionCounter.getInstance(CacheType.L1I).increaseHit();
         } else {
             HitMissEvictionCounter.getInstance(CacheType.L1I).increaseMiss();
-            byte[] data = getData(address, CacheType.L1I);
-            L1I.getSet().write(data, L1I.getTag(), CacheType.L1I);
+            byte[] data = getData(address, CacheType.L1I, L1I.getBlockOffset());
+            L1I.getSet().write(data, L1I.getTag(), CacheType.L1I, 0);
         }
 
         if (isInCache(L2)) {
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
         } else {
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
-            byte[] data = getData(address, CacheType.L2);
-            L2.getSet().write(data, L2.getTag(), CacheType.L2);
+            byte[] data = getData(address, CacheType.L2, L2.getBlockOffset());
+            L2.getSet().write(data, L2.getTag(), CacheType.L2, 0);
         }
     }
 
@@ -164,41 +164,62 @@ public class Main {
             HitMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
         } else {
             HitMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
-            byte[] data = getData(address, CacheType.L1D);
-            L1D.getSet().write(data, L1D.getTag(), CacheType.L1D);
+            byte[] data = getData(address, CacheType.L1D, L1D.getBlockOffset());
+            L1D.getSet().write(data, L1D.getTag(), CacheType.L1D, 0);
         }
 
         if (isInCache(L2)) {
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
         } else {
             HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
-            byte[] data = getData(address, CacheType.L2);
-            L2.getSet().write(data, L2.getTag(), CacheType.L2);
+            byte[] data = getData(address, CacheType.L2, L2.getBlockOffset());
+            L2.getSet().write(data, L2.getTag(), CacheType.L2, 0);
         }
     }
 
-    private static void storeData(long address, int size, int[] data, TraceDTO L1D, TraceDTO L2) {
-
+    private static void storeData(long address, int size, byte[] data, TraceDTO L1D, TraceDTO L2) {
+        Line line1D = findLine(L1D);
+        Line line2 = findLine(L2);
+        if (line1D != null) {
+            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseHit();
+            if (size >= 0) System.arraycopy(data, 0, line1D.data, L1D.getBlockOffset(), size);
+        } else {
+            HitMissEvictionCounter.getInstance(CacheType.L1D).increaseMiss();
+        }
+        if (line2 != null) {
+            HitMissEvictionCounter.getInstance(CacheType.L2).increaseHit();
+            if (size >= 0) System.arraycopy(data, 0, line2.data, L2.getBlockOffset(), size);
+        } else {
+            HitMissEvictionCounter.getInstance(CacheType.L2).increaseMiss();
+        }
+        setData(address, size, data);
     }
 
 
-    private static void modifyData(long address, int size, int[] data, TraceDTO L1D, TraceDTO L2) {
+    private static void modifyData(long address, int size, byte[] data, TraceDTO L1D, TraceDTO L2) {
+
     }
     // End
 
-    private static byte[] getData(long address, CacheType type) {
-
+    private static byte[] getData(long address, CacheType type, int blockOffset) {
         int length = type == CacheType.L2 ? getL2BlockSize() : getL1BlockSize();
+        int start = (int) (address - blockOffset);
         byte[] result = new byte[length];
 
         for (int i = 0; i < length; i++) {
-
-            result[i] = ram[(int) (address + i)];
-
+            result[i] = ram[(int) (start + i)];
         }
-
         return result;
     }
+
+    private static void setData(long address, int size, byte[] data) {
+        for (int i = 0; i < size; i++) {
+            ram[(int) (address + i)] = data[i];
+        }
+        System.out.println("anan");
+    }
+
+    // TODO Do not forget to output to RAM.dat file at least once before exit.
 
     private static boolean isInCache(TraceDTO traceDTO) {
         for (Line line : traceDTO.getSet().lines) {
@@ -208,13 +229,21 @@ public class Main {
         return false;
     }
 
+    private static Line findLine(TraceDTO traceDTO) {
+        for (Line line : traceDTO.getSet().lines) {
+            if (line.valid && line.tag == traceDTO.getTag())
+                return line;
+        }
+        return null;
+    }
+
     // Start cache related functions
     private static TraceDTO findSet(long address, CacheType cacheType) {
         String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
         int offset;
         int tag;
         int blockOffset;
-        String set = "";
+        String set;
         switch (cacheType) {
             case L1I:
 
