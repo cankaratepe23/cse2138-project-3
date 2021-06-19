@@ -14,12 +14,20 @@ public class Line {
         age++;
     }
 
+    private String byteArrayToHex(byte[] a) {
+        StringBuilder sb = new StringBuilder(a.length * 2);
+        for(byte b: a)
+            sb.append(String.format("%02x", b));
+        return sb.toString();
+    }
+
+
     @Override
     public String toString() {
         return "Line{" +
                 "valid=" + valid +
                 ", tag=" + tag +
-                ", data=" + Arrays.toString(data) +
+                ", data=" + byteArrayToHex(data) +
                 '}';
     }
 }
